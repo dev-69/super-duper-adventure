@@ -46,24 +46,31 @@ int doorStatusUpdate()
 {
     //  it is good to update the varibles as this function starts.
     //  call reedLockCheck function
-    void reedLockCheck();
+     reedLockCheck();
       if(virtual_lock_status==1 && real_lock_status==0)     //1 is open and 0 is closed
       {
         //    the real door is closed and needs to be updated into program
             virtual_lock_status = 0;
+            return 1;
       }
       else if(virtual_lock_status==0 && real_lock_status==1)
       {
         //    emergency mode triggered
-        
+        buzzerWithDelay(30);  //the argument includes seconds of delay
+        //    send message to owner
+        // send live recording part
+        return 2;
       }
+        
+     
       else
       {
         //    includes conditions where both variables are same. hence, system is stable and do nothin here 
-        void buzzerWithDelay(30);  //the argument includes seconds of delay
-        //    send message to owner
-        // send live recording part
-      }
+        return 0;
+      } 
+
+//      return various numbers for various errors.
+      
 }
 
 void setup() {
