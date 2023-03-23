@@ -1,3 +1,6 @@
 1.File Handling for phone numbers.
-2.Add number of attempts to enter OTP PIN. (If wrong more than 4 Attempts warning message should be sent to OWNER only.)
+
+23-03-23
+Added normal_input() and master_input() functions and added the functionality of receiving qr code via url in messages.
+normal_input() is for normal attempts and master_input() is for final and last attempt.
 
