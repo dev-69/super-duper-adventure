@@ -42,7 +42,7 @@ void buzzerWithDelay(int time)
 //implementing the conditional statement
 //included in a function "door update" that changes the code lock status according to real lock status
 int doorStatusUpdate()
-// global variables used hence no arguments passed to function
+// global variables used hence no arguments passed to function static functions would've been beter.
 {
     //  it is good to update the varibles as this function starts.
     //  call reedLockCheck function
