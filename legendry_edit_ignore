@@ -1,0 +1,293 @@
+//BOARD PIN SETTINGS
+int reed_lock_pin = 13;  //for emergebcy lock
+int buzzer_pin = 12;  //for emergebcy lock
+
+//NETWORK CREDENTIALS
+static const char *ssid = "TP-Link_6A46"; //WIFI SSID TO BE DECIDED BY THE PERSON SETTING UP
+static const char *password = "29097173";//PASSWORD
+
+//global variable for code lock status. 
+//update it everytime code changes the status.
+bool virtual_lock_status;                 //1 is open and 0 is closed
+
+//global varible for reed lock status
+bool real_lock_status;                    //1 is open and 0 is closed
+
+
+#include <LiquidCrystal.h>
+#include "twilio.hpp"
+#include<stdlib.h>
+#include<stdio.h>
+#include<time.h>
+#include <Keypad.h>
+#include<string.h>
+
+const int RS= 27;
+const int E= 26;
+const int D4= 25;
+const int D5= 33;
+const int D6= 32;
+const int D7= 23;
+
+void reedLockCheck()
+{
+    //  declare the reading pin as input
+    pinMode(reed_lock_pin, INPUT);
+    //update the global variable directly
+    real_lock_status = digitalRead(reed_lock_pin);
+    
+    //try using return type and static function for making code more secure
+ 
+}
+
+//function for buzzer ringing
+void buzzerWithDelay(int time)
+{
+//   declare the buzzerpin as output
+   pinMode(buzzer_pin, OUTPUT);
+   for(int i = 0;i < time; i++)
+   {
+      digitalWrite(buzzer_pin,HIGH);
+      delay(498);
+      digitalWrite(buzzer_pin,LOW);
+      delay(498);
+   }
+}
+
+//implementing the conditional statement
+//included in a function "door update" that changes the code lock status according to real lock status
+int doorStatusUpdate()
+// global variables used hence no arguments passed to function static functions would've been beter.
+{
+    //  it is good to update the varibles as this function starts.
+    //  call reedLockCheck function
+     reedLockCheck();
+      if(virtual_lock_status==1 && real_lock_status==0)     //1 is open and 0 is closed
+      {
+        //    the real door is closed and needs to be updated into program
+            virtual_lock_status = 0;
+            return 1;
+      }
+      else if(virtual_lock_status==0 && real_lock_status==1)
+      {
+        //    emergency mode triggered
+        buzzerWithDelay(30);  //the argument includes seconds of delay
+        //    send message to owner
+        // send live recording part
+        return 2;
+      }
+      else
+      {
+        //    includes conditions where both variables are same. hence, system is stable and do nothin here 
+        return 0;
+      } 
+//      return various numbers for various errors.
+}
+
+//set the crystal display 
+LiquidCrystal LCD(RS, E, D4, D5, D6, D7);
+const byte ROWS = 4; // Number of rows in the keypad
+const byte COLS = 4; // Number of columns in the keypad
+// Define the keypad matrix
+char keys[ROWS][COLS] = 
+{
+  {'1', '2', '3', 'A'},
+  {'4', '5', '6', 'B'},
+  {'7', '8', '9', 'C'},
+  {'*', '0', '#', 'D'}
+};
+// Define the keypad pins
+byte rowPins[ROWS] = {21, 19, 18, 5};
+byte colPins[COLS] = {12, 13, 14, 15};
+// Create the keypad object
+Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+
+
+//set twillio  wala api
+// Values from Twilio (find them on the dashboard)
+static const char *account_sid = "AC747ba638bc7b793644d050a1a4da5d59";
+static const char *auth_token = "f1b0850dc888e562830bb1b97492d69f";
+// Phone number should start with "+<countrycode>"
+static const char *from_number = "+15077057383";
+// Phone number should start with "+<countrycode>"
+static char *to_number ; 
+
+//SET THE TO NUMBER BEFORE USING TWILLIO
+void setPhone(String num){ //eg setPhone(+918928479729);
+  *to_number=num;
+}
+
+//GENERATE OTP AND RETURN A STRING
+String generateOTP(){
+int random_number = random(1000, 9999);
+return String(random_number);
+}
+
+//this block before using otp
+String otp = generateOTP();
+String message = "https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl="+otp+"\n\nTHe OTP is " + otp;
+const String correctPIN = otp;
+
+
+//Defining number of ATTEMPTS
+int attempts = 0;
+
+Twilio *twilio;
+
+void setup() 
+{ 
+
+  Serial.begin(115200);
+  LCD.begin(16, 2);
+  LCD.print("Connecting to ");
+  LCD.setCursor(0, 1);
+  LCD.print("WiFi");
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) 
+  {
+    LCD.clear();
+    Serial.println("Connecting...");
+    LCD.print("Connecting...");
+    delay(500);
+  }
+  LCD.clear();
+  LCD.print("Connected");
+  Serial.println("Connected!");
+}
+
+int verifyEntry() //legend for OTP VERIFICATION
+{
+  normal_input();
+  if(attempts >= 3)
+  {
+    Serial.println("\nInitiating the MASTER CALL function\n\n");
+    master_input();
+    Serial.println("\n\nExiting the Master Call function\n\n");
+  }
+  return 0;
+}
+
+
+void loop()
+{
+//  call int doorStatusUpdate() to check for door breakage
+//don't keep interupt cause its long to execute
+int doorStatusUpdate();
+
+//check pin at keypad func?
+//first face lock hoga 
+//primary will serial comm for something and then otp legend function below will be triggered
+verifyEntry();
+}
+
+
+//we have to make a function call to generate transfer and verify otp
+void normal_input()
+{
+  twilio = new Twilio(account_sid, auth_token);
+  String response;
+  bool success = twilio->send_message(to_number, from_number, message, response); 
+  Serial.println("Value of bool success is ?? ");
+  Serial.println(success);
+  if (success) 
+  {
+    Serial.println("Sent message successfully!");
+  } 
+  else 
+  {
+    Serial.println(response);
+  }
+  
+  Serial.println("Enter your PIN");
+  LCD.clear();
+  LCD.print("Enter your PIN");
+  Serial.print("");
+  LCD.setCursor(0,1);
+  while(attempts < 4)
+  {
+    static String input = ""; 
+    char key = keypad.getKey(); 
+    while (key != NO_KEY)
+    {  
+      LCD.print(key);
+      Serial.print(key);
+      input += key; 
+      if (input.length() == 4 ) 
+      { 
+        if (input == correctPIN) 
+        {
+          Serial.println("\nPIN accepted."); // Print a success message to the serial monitor
+          LCD.clear();
+          LCD.print("PIN accepted    ");
+        }
+        else if(input != correctPIN) // If the input does not match the correct PIN
+        {        
+          Serial.println("\nIncorrect PIN. Please try again."); // Print an error message to the serial monitor
+          LCD.setCursor(0, 0);  
+          LCD.print("Incorrect Pin");
+          LCD.setCursor(0,1);
+          LCD.print("Please try again");
+          delay(696);
+          input = "";
+          LCD.clear();
+          attempts+=1;
+        }
+      }
+      key = NO_KEY;
+    }
+  }
+  if(attempts >= 4)
+  {
+    Serial.println("WHAT IS DIS BEHAVIOUR");
+    LCD.print("WHAT IS DIS ");
+    LCD.setCursor(0,1);
+    LCD.print("BEHAVIOUR");
+  }
+}
+
+void master_input()
+{
+  twilio = new Twilio(account_sid, auth_token);
+  int master_number = random(1000, 9999);
+  String masterotp = String(master_number);
+
+  String master_message = "The master OTP is "+masterotp;
+
+  //delay(1000);
+  String respons;
+  bool success = twilio->send_message(to_number, from_number, master_message, respons);
+  if (success) 
+  {
+    Serial.println("Sent master message successfully!");
+  } 
+  else 
+  {
+    Serial.println(respons);
+  }   
+  int trial = 1;
+  while(trial == 1)
+  {
+    static String input = ""; 
+    char key = keypad.getKey(); 
+    
+    if (key != NO_KEY)
+    {
+      Serial.print(key);
+      input += key; 
+      if (input.length() == 4) 
+      { 
+        if (input == masterotp) 
+        {
+          Serial.println("\nPIN accepted."); // Print a success message to the serial monitor
+        }
+        else  // If the input does not match the correct PIN
+        {
+          Serial.println("\nIncorrect PIN. Please try again."); // Print an error message to the serial monitor
+          input = "";
+          trial=0;
+        }
+      }
+    }
+  }
+}
