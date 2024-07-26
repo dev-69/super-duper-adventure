@@ -30,14 +30,14 @@ static const char *ssid = ""; //WIFI SSID TO BE DECIDED BY THE PERSON SETTING UP
 static const char *password = "";//PASSWORD
 
 // Values from Twilio (find them on the dashboard)
-static const char *account_sid = "AC747ba638bc7b793644d050a1a4da5d59";
-static const char *auth_token = "f1b0850dc888e562830bb1b97492d69f";
+static const char *account_sid = "AC747ba638bc7b793644d050a1a4da5djcdgsvvd59";
+static const char *auth_token = "f1b0850dc888e562830bb1b9xdbovfb7492d69f";
 // Phone number should start with "+<countrycode>"
 static const char *from_number = "+15077057383";
 
 // You choose!
 // Phone number should start with "+<countrycode>"
-static const char *to_number = "+918454987109"; //Have to find a way to make different numbers appear here.
+static const char *to_number = "+918747987109"; //Have to find a way to make different numbers appear here.
 
 int random_number = random(1000, 9999);
 String otp = String(random_number);
